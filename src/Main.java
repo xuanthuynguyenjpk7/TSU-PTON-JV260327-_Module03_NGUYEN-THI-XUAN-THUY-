@@ -33,7 +33,11 @@ public class Main {
                     break;
 
                 case 2:
-                    addBorrowCards(sc);
+                    if (addBorrowCards(sc)) {
+                        System.out.println("Thêm phiếu mượn thành công");
+                    } else {
+                        System.out.println("Thêm phiếu mượn thất bại!");
+                    }
                     break;
 
                 case 3:
@@ -65,7 +69,7 @@ public class Main {
         sc.close();
     }
 
-    public static void displayBorrowCards() throws SQLException {
+    public static void displayBorrowCards() {
         if (ConnectionDB.conn == null) {
             System.out.println("Lỗi: Chưa kết nối được với Database!!");
             return;
@@ -73,10 +77,11 @@ public class Main {
 
         String sqlDisplay = "{CALL get_all_borrow_cards()}";
         try (
-                Connection conn = ConnectionDB.getConnection();
+                Connection conn = ConnectionDB.getConnection()
         ) {
-            try (CallableStatement stmt = ConnectionDB.conn.prepareCall(sqlDisplay);
-                 ResultSet rs = stmt.executeQuery();
+            assert conn != null;
+            try (CallableStatement stmt = conn.prepareCall(sqlDisplay);
+                 ResultSet rs = stmt.executeQuery()
             ) {
                 System.out.println("--- ĐÃ KẾT NỐI VÀ CHẠY PROCEDURE ---");
                 while (rs.next()) {
@@ -98,57 +103,61 @@ public class Main {
     }
 
 
-    public static boolean addBorrowCards(Scanner sc) throws SQLException {
+    public static boolean addBorrowCards(@org.jetbrains.annotations.NotNull Scanner sc) {
 
         BorrowCards borrowCards = new BorrowCards();
 
         System.out.println("Nhập tên sách:");
-        borrowCards.setBook_title(sc.nextLine());
+        BorrowCards.setBook_title(sc.nextLine());
 
         System.out.println("Nhập tên độc giả:");
-        borrowCards.setBorrower_name(sc.nextLine());
+        BorrowCards.setBorrower_name(sc.nextLine());
 
         System.out.println("Nhập ngày mượn (yyyy-MM-dd):");
-        borrowCards.setBorrow_date(
+        BorrowCards.setBorrow_date(
                 LocalDate.parse(sc.nextLine())
         );
 
         System.out.println("Nhập hạn trả (yyyy-MM-dd):");
-        borrowCards.setReturn_deadline(
+        BorrowCards.setReturn_deadline(
                 LocalDate.parse(sc.nextLine())
         );
 
         System.out.println("Nhập số lượng:");
-        borrowCards.setQuantity(
+        BorrowCards.setQuantity(
                 Integer.parseInt(sc.nextLine())
         );
 
         System.out.println("Nhập trạng thái:");
-        borrowCards.setStatus(sc.nextLine());
+        BorrowCards.setStatus(sc.nextLine());
 
         String sql = "{CALL add_borrow_cards(?,?,?,?,?,?)}";
 
         try (
-                Connection conn = ConnectionDB.getConnection();
-                CallableStatement stmt = conn.prepareCall(sql)
+                Connection conn = ConnectionDB.getConnection()
         ) {
+            assert conn != null;
+            try (CallableStatement stmt = conn.prepareCall(sql)
+            ) {
 
-            stmt.setString(1, borrowCards.getBook_title());
-            stmt.setString(2, borrowCards.getBorrower_name());
-            stmt.setDate(3, Date.valueOf(borrowCards.getBorrow_date().toEpochDay));
-            stmt.setDate(4, Date.valueOf(borrowCards.getReturn_deadline().toLocalDate()));
-            stmt.setInt(5, borrowCards.getQuantity());
-            stmt.setString(6, borrowCards.getStatus());
+                stmt.setString(1, BorrowCards.getBook_title());
+                stmt.setString(2, BorrowCards.getBorrower_name());
+                stmt.setDate(3, Date.valueOf(BorrowCards.getBorrow_date()));
+                stmt.setDate(4, Date.valueOf(BorrowCards.getReturn_deadline()));
+                stmt.setInt(5, BorrowCards.getQuantity());
+                stmt.setString(6, BorrowCards.getStatus());
 
-            return stmt.executeUpdate() > 0;
+                return stmt.executeUpdate() > 0;
 
+            }
         } catch (SQLException e) {
+            System.out.println("Lỗi SQL " + e.getMessage());
             e.printStackTrace();
             return false;
         }
     }
 
-    private static void updateBorrowCards(Scanner sc) throws SQLException {
+    private static void updateBorrowCards(Scanner sc) {
 
         // 1. Kiểm tra kết nối
         if (ConnectionDB.conn == null) {
@@ -181,35 +190,32 @@ public class Main {
         BorrowCards card = new BorrowCards();
 
         // 4. Tìm phiếu theo ID
-        String sqlFind = "{CALL find_borrow_card_by_card_id(?)}";
-
-        try (
-                Connection conn = ConnectionDB.getConnection();
-                CallableStatement stmt = conn.prepareCall(sqlFind)
+        String sqlFind = "{CALL find_borrow_cards_by_card_id(?)}";
+        Connection conn = ConnectionDB.getConnection();
+        assert conn != null;
+        try (CallableStatement stmt = conn.prepareCall(sqlFind)
         ) {
-
             stmt.setInt(1, cardId);
 
             try (ResultSet rs = stmt.executeQuery()) {
 
                 if (!rs.next()) {
                     System.out.println(
-                            "Không tìm thấy thẻ mượn nào có ID: " + cardId
-                    );
+                            "Không tìm thấy thẻ mượn nào có ID: " + cardId);
                     return;
                 }
 
-                card.setCard_id(rs.getInt("card_id"));
-                card.setBook_title(rs.getString("book_title"));
-                card.setBorrower_name(rs.getString("borrower_name"));
-                card.setBorrow_date(
+                BorrowCards.setCard_id(rs.getInt("card_id"));
+                BorrowCards.setBook_title(rs.getString("book_title"));
+                BorrowCards.setBorrower_name(rs.getString("borrower_name"));
+                BorrowCards.setBorrow_date(
                         rs.getDate("borrow_date").toLocalDate()
                 );
-                card.setReturn_deadline(
+                BorrowCards.setReturn_deadline(
                         rs.getDate("return_deadline").toLocalDate()
                 );
-                card.setQuantity(rs.getInt("quantity"));
-                card.setStatus(rs.getString("status"));
+                BorrowCards.setQuantity(rs.getInt("quantity"));
+                BorrowCards.setStatus(rs.getString("status"));
             }
 
         } catch (SQLException e) {
@@ -228,7 +234,7 @@ public class Main {
                 continue;
             }
 
-            card.setBook_title(bookTitle);
+            BorrowCards.setBook_title(bookTitle);
             break;
         }
 
@@ -243,7 +249,7 @@ public class Main {
                 continue;
             }
 
-            card.setBorrower_name(borrowerName);
+            BorrowCards.setBorrower_name(borrowerName);
             break;
         }
 
@@ -263,7 +269,7 @@ public class Main {
             }
         }
 
-        card.setBorrow_date(borrowDate);
+        BorrowCards.setBorrow_date(borrowDate);
 
         // 8. Nhập hạn trả mới
         LocalDate returnDeadline = null;
@@ -281,7 +287,7 @@ public class Main {
             }
         }
 
-        card.setReturn_deadline(returnDeadline);
+        BorrowCards.setReturn_deadline(returnDeadline);
 
         // 9. Nhập quantity mới
         while (true) {
@@ -298,7 +304,7 @@ public class Main {
                     continue;
                 }
 
-                card.setQuantity(quantity);
+                BorrowCards.setQuantity(quantity);
                 break;
 
             } catch (NumberFormatException e) {
@@ -317,7 +323,7 @@ public class Main {
                 continue;
             }
 
-            card.setStatus(newStatus);
+            BorrowCards.setStatus(newStatus);
             break;
         }
 
@@ -326,17 +332,16 @@ public class Main {
                 "{CALL update_borrow_cards_by_card_id(?,?,?,?,?,?,?)}";
 
         try (
-                Connection conn = ConnectionDB.getConnection();
                 CallableStatement stmt = conn.prepareCall(sqlUpdate)
         ) {
 
-            stmt.setInt(1, card.getCard_id());
-            stmt.setString(2, card.getBook_title());
-            stmt.setString(3, card.getBorrower_name());
-            stmt.setDate(4, Date.valueOf(card.getBorrow_date().toLocalDate()));
-            stmt.setDate(5, Date.valueOf(card.getReturn_deadline().toLocalDate()));
-            stmt.setInt(6, card.getQuantity());
-            stmt.setString(7, card.getStatus());
+            stmt.setInt(1, BorrowCards.getCard_id());
+            stmt.setString(2, BorrowCards.getBook_title());
+            stmt.setString(3, BorrowCards.getBorrower_name());
+            stmt.setDate(4, Date.valueOf(BorrowCards.getBorrow_date()));
+            stmt.setDate(5, Date.valueOf(BorrowCards.getReturn_deadline()));
+            stmt.setInt(6, BorrowCards.getQuantity());
+            stmt.setString(7, BorrowCards.getStatus());
 
             stmt.executeUpdate();
 

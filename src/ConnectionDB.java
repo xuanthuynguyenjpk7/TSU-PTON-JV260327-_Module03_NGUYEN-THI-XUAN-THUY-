@@ -15,6 +15,6 @@ public class ConnectionDB {
     }
 
     public static Connection getConnection() {
-        return null;
+        return conn;
     }
 }
