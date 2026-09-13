@@ -1,9 +1,12 @@
+import org.jetbrains.annotations.NotNull;
+
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.util.InputMismatchException;
 import java.util.Scanner;
 
 public class Main {
@@ -45,7 +48,7 @@ public class Main {
                     break;
 
                 case 4:
-                    System.out.println("Xóa");
+                    deleteBorrowCards(sc);
                     break;
 
                 case 5:
@@ -103,7 +106,7 @@ public class Main {
     }
 
 
-    public static boolean addBorrowCards(@org.jetbrains.annotations.NotNull Scanner sc) {
+    public static boolean addBorrowCards(@NotNull Scanner sc) {
 
         BorrowCards borrowCards = new BorrowCards();
 
@@ -351,7 +354,117 @@ public class Main {
             System.out.println("Lỗi SQL: " + e.getMessage());
         }
     }
+
+    public static void deleteBorrowCards(Scanner sc) {
+
+        // 1. Kiểm tra kết nối
+        if (ConnectionDB.conn == null) {
+            System.out.println("Lỗi: Chưa kết nối được với database");
+            return;
+        }
+
+        // 2. Nhập card_id
+        int cardId;
+
+        while (true) {
+            System.out.println("Nhập mã card_id cần xóa: ");
+
+            try {
+                cardId = sc.nextInt();
+
+                if (cardId <= 0) {
+                    System.out.println("card_id phải lớn hơn 0!!");
+                    continue;
+                }
+
+                break;
+
+            } catch (InputMismatchException e) {
+                System.out.println(
+                        "card_id không hợp lệ! Vui lòng nhập số nguyên!"
+                );
+                sc.nextLine();
+            }
+        }
+
+        // 3. Tạo object
+        BorrowCards card = new BorrowCards();
+
+        // 4. Tìm phiếu theo ID
+        String sqlFind = "{CALL find_borrow_cards_by_card_id(?)}";
+
+        Connection conn = ConnectionDB.getConnection();
+
+        try (CallableStatement stmt = conn.prepareCall(sqlFind)) {
+
+            stmt.setInt(1, cardId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+
+                if (!rs.next()) {
+                    System.out.println(
+                            "Không tìm thấy thẻ mượn nào có ID: " + cardId
+                    );
+                    return;
+                }
+
+                // ⭐ Lưu dữ liệu vào OBJECT card
+                card.setCard_id(rs.getInt("card_id"));
+                card.setBook_title(rs.getString("book_title"));
+                card.setBorrower_name(rs.getString("borrower_name"));
+
+                card.setBorrow_date(
+                        rs.getDate("borrow_date").toLocalDate()
+                );
+
+                card.setReturn_deadline(
+                        rs.getDate("return_deadline").toLocalDate()
+                );
+
+                card.setQuantity(rs.getInt("quantity"));
+                card.setStatus(rs.getString("status"));
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Lỗi SQL: " + e.getMessage());
+            return;
+        }
+
+        // 5. Xóa Enter còn sót lại sau nextInt()
+        sc.nextLine();
+
+        // 6. Xác nhận trước khi xóa
+        System.out.println(
+                "Bạn có chắc muốn xóa phiếu mượn có card_id là "
+                        + cardId + " không?"
+        );
+
+        System.out.println("Nhập yes để xác nhận:");
+
+        String confirm = sc.nextLine();
+
+        if (!confirm.equalsIgnoreCase("yes")) {
+            System.out.println("Đã hủy thao tác xóa!");
+            return;
+        }
+
+        // 7. Xóa phiếu mượn
+        String sqlDelete = "{CALL delete_borrow_cards(?)}";
+
+        try (CallableStatement stmt = conn.prepareCall(sqlDelete)) {
+
+            stmt.setInt(1, card.getCard_id());
+
+            stmt.executeUpdate();
+
+            System.out.println("Xóa phiếu mượn thành công!");
+
+        } catch (SQLException e) {
+            System.out.println("Lỗi SQL: " + e.getMessage());
+        }
+    }
 }
+
 
 
 
