@@ -52,11 +52,11 @@ public class Main {
                     break;
 
                 case 5:
-                    System.out.println("Tìm kiếm theo tên độc giả");
+                    searchBorrowCardsByBorrowerName(sc);
                     break;
 
                 case 6:
-                    System.out.println("Tìm kiếm theo tên sách");
+                    searchBorrowCardsByBookTitle(sc);
                     break;
 
                 case 7:
@@ -69,7 +69,6 @@ public class Main {
 
         } while (choice != 7);
 
-        sc.close();
     }
 
     public static void displayBorrowCards() {
@@ -95,7 +94,14 @@ public class Main {
                     LocalDate returnDeadline = rs.getDate("return_deadline").toLocalDate();
                     int quantity = rs.getInt("quantity");
                     String status = rs.getString("status");
-                    System.out.println("card_id: " + cardId + " book_title" + bookTitle + " borrower_name " + borrowerName + " borrow_date" + borrowDate + " return_deadline " + returnDeadline + " quantity " + quantity + " status " + status);
+                    System.out.println(
+                            "card_id: " + cardId + "  |  " +
+                                    " book_title: " + bookTitle + "  |  " +
+                                    " borrower_name: " + borrowerName + "  |  " +
+                                    " borrow_date: " + borrowDate + "  |  " +
+                                    " return_deadline: " + returnDeadline + "  |  " +
+                                    " quantity: " + quantity + "  |  " +
+                                    " status: " + status);
                 }
 
             }
@@ -104,7 +110,6 @@ public class Main {
         }
 
     }
-
 
     public static boolean addBorrowCards(@NotNull Scanner sc) {
 
@@ -464,11 +469,130 @@ public class Main {
         }
     }
 
-    public static void fimBorrowCards(Scanner sc) {
+    public static void searchBorrowCardsByBorrowerName(Scanner sc) {
+
+        // 1. Kiểm tra kết nối
         if (ConnectionDB.conn == null) {
+            System.out.println("Lỗi chưa kết nối được với database!");
+            return;
+        }
+
+        // 2. Nhập tên độc giả cần tìm
+        System.out.println("Nhập tên độc giả cần tìm phiếu mượn: ");
+        String borrowerName = sc.nextLine().trim();
+
+        // 3. Gọi procedure
+        String sqlSearchBorrowerName =
+                "{CALL get_borrow_cards_by_borrower_name(?)}";
+
+        try (CallableStatement stmt =
+                     ConnectionDB.conn.prepareCall(sqlSearchBorrowerName)) {
+
+            // 4. Truyền tham số
+            stmt.setString(1, borrowerName);
+
+            // 5. Lấy kết quả
+            try (ResultSet rs = stmt.executeQuery()) {
+
+                boolean found = false;
+
+                while (rs.next()) {
+
+                    // ⭐ Tìm thấy → đổi thành true
+                    found = true;
+
+                    int card_id = rs.getInt("card_id");
+                    String book_title = rs.getString("book_title");
+                    String borrower_name = rs.getString("borrower_name");
+                    String borrow_date = rs.getString("borrow_date");
+                    String return_deadline =
+                            rs.getString("return_deadline");
+                    int quantity = rs.getInt("quantity");
+                    String status = rs.getString("status");
+
+                    System.out.println(
+                            "card_id: " + card_id + " | " +
+                                    "book_title: " + book_title + " | " +
+                                    "borrower_name: " + borrower_name + " | " +
+                                    "borrow_date: " + borrow_date + " | " +
+                                    "return_deadline: " + return_deadline + " | " +
+                                    " quantity: " + quantity + " | " +
+                                    "status: " + status
+                    );
+                }
+
+                // 6. Không tìm thấy
+                if (!found) {
+                    System.out.println(
+                            "Không tìm thấy phiếu mượn nào có tên độc giả là: "
+                                    + borrowerName
+                    );
+                }
+
+            } catch (SQLException e) {
+                System.out.println("Lỗi SQL: " + e.getMessage());
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Lỗi SQL: " + e.getMessage());
         }
     }
+
+    public static void searchBorrowCardsByBookTitle(Scanner sc) {
+        //Bước 1: Kiểm tra kết nối
+        if (ConnectionDB.conn == null) {
+            System.out.println("Lỗi chưa kết nối được với database!");
+            return;
+        }
+
+        //Bước 2: nhập tên book title
+        System.out.println("Nhập tên book title của phiếu mượn bạn cần tìm: ");
+        String bookTitle = sc.nextLine().trim();
+
+        //Bước 3: gọi Procedure
+        String sqlSearchBookTitle =
+                "{CALL search_borrow_cards_by_book_title(?)}";
+        try (CallableStatement stmt = ConnectionDB.conn.prepareCall(sqlSearchBookTitle)) {
+
+            // Bước 4. Truyền tham số
+            stmt.setString(1, bookTitle);
+            try (ResultSet rs = stmt.executeQuery()) {
+                boolean found = false;
+                while (rs.next()) {
+
+                    // ⭐ Tìm thấy → đổi thành true
+                    found = true;
+                    String card_id = rs.getString("card_id");
+                    String book_title = rs.getString("book_title");
+                    String borrower_name = rs.getString("borrower_name");
+                    String borrow_date = rs.getString("borrow_date");
+                    String return_deadline = rs.getString("return_deadline");
+                    int quantity = rs.getInt("quantity");
+                    String status = rs.getString("status");
+                    System.out.println("Phiếu mượn bạn cần tìm có tên sách là " + bookTitle + " có thông tin như bên dưới:");
+                    System.out.println(
+                            "card_id: " + card_id + " | " +
+                                    "book_title: " + book_title + " | " +
+                                    "borrower_name: " + borrower_name + " | " +
+                                    "borrow_date: " + borrow_date + " | " +
+                                    "return_deadline: " + return_deadline + " | " +
+                                    " quantity: " + quantity + " | " +
+                                    "status: " + status
+                    );
+                }
+                if (!found) {
+                    System.out.println("Không tìm thấy phiếu mượn cs tên sách là: " + bookTitle);
+                }
+            } catch (SQLException e) {
+                System.out.println("Lỗi SQL: " + e.getMessage());
+            }
+        } catch (SQLException e) {
+            System.out.println("Lỗi SQL: " + e.getMessage());
+        }
+    }
+
 }
+
 
 
 
