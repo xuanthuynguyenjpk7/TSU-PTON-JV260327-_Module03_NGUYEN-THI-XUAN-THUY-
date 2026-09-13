@@ -27,7 +27,7 @@ public class Main {
             System.out.println("Nhập lựa chọn của bạn: ");
 
             choice = sc.nextInt();
-            sc.nextLine(); // QUAN TRỌNG
+            sc.nextLine();
 
             switch (choice) {
 
