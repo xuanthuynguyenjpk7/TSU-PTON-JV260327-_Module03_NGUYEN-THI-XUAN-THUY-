@@ -463,6 +463,11 @@ public class Main {
             System.out.println("Lỗi SQL: " + e.getMessage());
         }
     }
+
+    public static void fimBorrowCards(Scanner sc) {
+        if (ConnectionDB.conn == null) {
+        }
+    }
 }
 
 
