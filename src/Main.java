@@ -581,7 +581,7 @@ public class Main {
                     );
                 }
                 if (!found) {
-                    System.out.println("Không tìm thấy phiếu mượn cs tên sách là: " + bookTitle);
+                    System.out.println("Không tìm thấy phiếu mượn có tên sách là: " + bookTitle);
                 }
             } catch (SQLException e) {
                 System.out.println("Lỗi SQL: " + e.getMessage());
