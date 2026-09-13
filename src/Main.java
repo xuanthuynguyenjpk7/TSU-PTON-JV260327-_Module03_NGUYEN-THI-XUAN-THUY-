@@ -498,7 +498,7 @@ public class Main {
 
                 while (rs.next()) {
 
-                    // ⭐ Tìm thấy → đổi thành true
+                    // Tìm thấy đổi thành true
                     found = true;
 
                     int card_id = rs.getInt("card_id");
@@ -560,7 +560,7 @@ public class Main {
                 boolean found = false;
                 while (rs.next()) {
 
-                    // ⭐ Tìm thấy → đổi thành true
+                    // Tìm thấy đổi thành true
                     found = true;
                     String card_id = rs.getString("card_id");
                     String book_title = rs.getString("book_title");
