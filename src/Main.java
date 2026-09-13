@@ -413,7 +413,7 @@ public class Main {
                     return;
                 }
 
-                // ⭐ Lưu dữ liệu vào OBJECT card
+                // Lưu dữ liệu vào OBJECT card
                 card.setCard_id(rs.getInt("card_id"));
                 card.setBook_title(rs.getString("book_title"));
                 card.setBorrower_name(rs.getString("borrower_name"));
